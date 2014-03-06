@@ -160,9 +160,16 @@ public class Main {
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_BACK);
+		GL11.glFrontFace(GL11.GL_CCW);
+		
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDepthFunc(GL11.GL_NEAREST);
+		
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
 		GL11.glLoadIdentity();
-		GL11.glOrtho(0, Display.getWidth(), 0, Display.getHeight(), 1, -1);
+		GL11.glOrtho(0, Display.getWidth(), 0, Display.getHeight(), 10, -10);
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
 	}
 	
@@ -217,7 +224,7 @@ public class Main {
 			});
 		}
 		
-		for(int i = 0; i < 1; i++) {
+		for(int i = 0; i < 5; i++) {
 			//collider = new HashingCollider(COLLISION_CELL_SIZE, 12);
 			for(Entity e : ec.where(COLLISION_RADIUS)) {
 				collider.index(e);
@@ -240,7 +247,9 @@ public class Main {
 							
 							if(ma != null) {
 								temp.set(o.position);
-								temp.setDistance(position, radius + o.get(COLLISION_RADIUS));
+								if(o.position.distance(position) > 0.001) {
+									temp.setDistance(position, radius + o.get(COLLISION_RADIUS));
+								}
 								
 								ma.accumulator.add(temp);
 								ma.count += 1.0;
@@ -315,62 +324,65 @@ public class Main {
 			if(screenBottom < 0) screenBottom = 0;
 			if(screenTop >= world.getHeight()) screenTop = world.getHeight();
 			
-			//GL11.glColor3d(0.0, 0.0, 0.0);
-			//GL11.glBegin(GL11.GL_QUADS);
-			GL11.glColor3d(1.0, 1.0, 1.0);
-			GL11.glBegin(GL11.GL_QUADS);
-			for(int x = screenLeft; x < screenRight; x++) {
-				for(int y = screenBottom; y < screenTop; y++) {
-					
-					if(!world.get(x, y)) {
+			GL11.glPushMatrix();
+			GL11.glTranslated(0.0, 0.0, 1.0);
+				GL11.glColor3d(1.0, 1.0, 1.0);
+				GL11.glBegin(GL11.GL_QUADS);
+				for(int x = screenLeft; x < screenRight; x++) {
+					for(int y = screenBottom; y < screenTop; y++) {
+						
+						if(!world.get(x, y)) {
+							double left = x * TILE_SIZE;
+							double right = left + TILE_SIZE;
+							double top = y * TILE_SIZE;
+							double bottom = top + TILE_SIZE;
+			
+							GL11.glVertex2d(left, top);
+							GL11.glVertex2d(right, top);
+							GL11.glVertex2d(right, bottom);
+							GL11.glVertex2d(left, bottom);
+						}
+						
+						/*
+						int d = distanceMap.getDistance(x, y);
+						
 						double left = x * TILE_SIZE;
 						double right = left + TILE_SIZE;
 						double top = y * TILE_SIZE;
 						double bottom = top + TILE_SIZE;
-		
+						
+						double color = 1.0 - 0.02 * d;
+						if(color < 0.0) color = 0.0;
+						
+						GL11.glColor3d(color, color, color);
+						GL11.glBegin(GL11.GL_QUADS);
 						GL11.glVertex2d(left, top);
 						GL11.glVertex2d(right, top);
 						GL11.glVertex2d(right, bottom);
 						GL11.glVertex2d(left, bottom);
+						GL11.glEnd();
+						*/
+					}
+				}
+				GL11.glEnd();
+			GL11.glPopMatrix();
+			
+			GL11.glPushMatrix();
+			GL11.glTranslated(0.0, 0.0, 0.9);
+				GL11.glColor3d(0.0, 0.0, 0.0);
+				GL11.glBegin(GL11.GL_LINES);
+					for(int i = 0; i <= world.getWidth(); i++) {
+						GL11.glVertex2d(i * TILE_SIZE, 0.0);
+						GL11.glVertex2d(i * TILE_SIZE, TILE_SIZE * world.getHeight());
 					}
 					
-					/*
-					int d = distanceMap.getDistance(x, y);
-					
-					double left = x * TILE_SIZE;
-					double right = left + TILE_SIZE;
-					double top = y * TILE_SIZE;
-					double bottom = top + TILE_SIZE;
-					
-					double color = 1.0 - 0.02 * d;
-					if(color < 0.0) color = 0.0;
-					
-					GL11.glColor3d(color, color, color);
-					GL11.glBegin(GL11.GL_QUADS);
-					GL11.glVertex2d(left, top);
-					GL11.glVertex2d(right, top);
-					GL11.glVertex2d(right, bottom);
-					GL11.glVertex2d(left, bottom);
-					GL11.glEnd();
-					*/
-				}
-			}
-			GL11.glEnd();
-			
-			
-			GL11.glColor3d(0.0, 0.0, 0.0);
-			GL11.glBegin(GL11.GL_LINES);
-				for(int i = 0; i <= world.getWidth(); i++) {
-					GL11.glVertex2d(i * TILE_SIZE, 0.0);
-					GL11.glVertex2d(i * TILE_SIZE, TILE_SIZE * world.getHeight());
-				}
+					for(int i = 0; i <= world.getHeight(); i++) {
+						GL11.glVertex2d(0.0, i * TILE_SIZE);
+						GL11.glVertex2d(TILE_SIZE * world.getWidth(), i * TILE_SIZE);
+					}
+				GL11.glEnd();
+			GL11.glPopMatrix();
 				
-				for(int i = 0; i <= world.getHeight(); i++) {
-					GL11.glVertex2d(0.0, i * TILE_SIZE);
-					GL11.glVertex2d(TILE_SIZE * world.getWidth(), i * TILE_SIZE);
-				}
-			GL11.glEnd();
-			
 			/*
 			for(Entity e : ec.where(FIND_PATH)) {
 				Vector2d waypoint = distanceMap.getDirectWaypoint(e.position, e.get(COLLISION_RADIUS));
@@ -387,7 +399,7 @@ public class Main {
 				if(e.position.distanceSquared(camera.position) < drawDistanceSquared) {
 					GL11.glPushMatrix();
 					
-					GL11.glTranslated(e.position.x, e.position.y, 0.0);
+					GL11.glTranslated(e.position.x, e.position.y, e.depth);
 					
 					if(e.has(ROTATION)) {
 						GL11.glRotated(-e.get(ROTATION).value * angleConversion, 0.0, 0.0, 1.0);
@@ -555,6 +567,7 @@ public class Main {
 	
 	public static Entity spawnPlayer(final EntityComponent ec, Vector2d position) {
 		final Entity player = new Entity(ec);
+		player.depth = -1.0;
 		player.add(MOVEMENT_SPEED, 300.0);
 		player.add(ROTATION, new MutableDouble(0.0));
 		player.add(RENDERABLE, true);
@@ -633,15 +646,7 @@ public class Main {
 				bullet.add(DESTROYED, true);
 				//bullet.get(ROTATION).value = Math.random() * Math.PI * 2;
 			}
-		});
-		/*
-		bullet.add(ON_TICK, new TickHandler() {
-			@Override
-			public void onTick(double delta) {
-				bullet.get(ROTATION).value += (Math.random() - 0.5) * delta;
-			}
-		});
-		*/
+		});		
 		bullet.add(ON_ENTITY_COLLISION, new EntityCollisionHandler() {
 			@Override
 			public void handle(Entity e) {

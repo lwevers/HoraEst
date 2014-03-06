@@ -10,6 +10,7 @@ public class Entity {
 	private EntityComponent entityComponent;
 	
 	public Vector2d position = new Vector2d(0.0, 0.0);
+	public double depth = 0.0;
 	public Entity processed = null;
 
 	public Entity(EntityComponent ec) {
